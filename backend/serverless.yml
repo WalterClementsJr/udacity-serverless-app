@@ -5,9 +5,37 @@ plugins:
 
 frameworkVersion: '3'
 
+params:
+  dev:
+    environment: 'dev'
+
+useDotenv: true
+
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs18.x
+
+  stage: dev
+  region: us-east-1
+
+  tracing:
+    lambda: true
+    apiGateway: true
+
+  environment:
+    TODOS_TABLE: ${param:environment}-todo-table
+    TODOS_CREATED_AT_INDEX: CreatedAtIndex
+    ATTACHMENT_S3_BUCKET: ${param:environment}-todo-bucket
+    SIGNED_URL_EXPIRATION: 300
+    AUTH0_JWKS_URL: ${env:AUTH0_URL}/.well-known/jwks.json
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - xray:*
+          Resource: "*"
 
 functions:
 
@@ -21,6 +49,13 @@ functions:
       - http:
           method: get
           path: todos
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: !GetAtt TodoTable.Arn
 
   # TODO: Configure this function
   CreateTodo:
@@ -29,6 +64,16 @@ functions:
       - http:
           method: post
           path: todos
+          cors: true
+          authorizer: Auth
+          request:
+            schema:
+              application/json: ${file(schema/todo.json)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: !GetAtt TodoTable.Arn
 
   # TODO: Configure this function
   UpdateTodo:
@@ -37,6 +82,13 @@ functions:
       - http:
           method: patch
           path: todos/{todoId}
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: !GetAtt TodoTable.Arn
 
   # TODO: Configure this function
   DeleteTodo:
@@ -53,7 +105,106 @@ functions:
       - http:
           method: post
           path: todos/{todoId}/attachment
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: !GetAtt AttachmentsBucket.Arn
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: !GetAtt TodoTable.Arn
 
 resources:
   Resources:
-    # TODO: Add any necessary AWS resources
+    RequestBodyValidator:
+      Type: "AWS::ApiGateway::RequestValidator"
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+
+    # API Gateway Response
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
+    # DynamoDB
+    TodoTable:
+      DeletionPolicy: Retain
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TODOS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: todoId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: todoId
+            KeyType: RANGE
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+
+    # S3 Bucket
+    AttachmentsBucket:
+      DeletionPolicy: Retain
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.ATTACHMENT_S3_BUCKET}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - "*"
+              AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - POST
+                - PUT
+                - HEAD
+                - DELETE
+              MaxAge: 3000
+
+    BucketPolicy:
+      DeletionPolicy: Retain
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref AttachmentsBucket
+        PolicyDocument:
+          Id: S3AttachmentBucketPolicy
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - ${self:provider.environment.ATTACHMENT_S3_BUCKET}
+                  - /*
+              Principal: "*"
