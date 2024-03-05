@@ -4,9 +4,13 @@ import ReactDOM from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import App from './App'
 import './index.css'
+import { authConfig } from './config'
 
-const domain = process.env.REACT_APP_AUTH0_DOMAIN
-const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID
+const domain = authConfig.domain;
+const clientId = authConfig.clientId;
+
+console.log(domain, clientId);
+
 ReactDOM.render(
   <Auth0Provider
     domain={domain}
