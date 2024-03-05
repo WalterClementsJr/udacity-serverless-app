@@ -1,0 +1,39 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "title": "Todo item schema",
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "title of todo",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-Z0-9]+$"
+    }
+  },
+  "userId": {
+    "type": "string"
+  },
+  "todoId": {
+    "type": "string"
+  },
+  "createdAt": {
+    "type": "string",
+    "format": "date-time"
+  },
+  "dueDate": {
+    "type": "string",
+    "format": "date-time"
+  },
+  "done": {
+    "type": "boolean"
+  },
+  "attachmentUrl": {
+    "type": "string",
+    "format": "uri"
+  }
+}

@@ -1,10 +1,12 @@
 import Axios from 'axios'
-import jsonwebtoken from 'jsonwebtoken'
-import { createLogger } from '../../utils/logger.mjs'
+import jwt from 'jsonwebtoken'
+import { createLogger } from '../../utils/logger'
+import { JwtPayload } from '../../auth/JwtPayload'
+import { getToken } from '../../auth/utils'
 
-const logger = createLogger('auth')
+const logger = createLogger('Auth0Authorizer')
 
-const jwksUrl = 'https://test-endpoint.auth0.com/.well-known/jwks.json'
+const jwksUrl = `https://${process.env.AUTH0_URL}/.well-known/jwks.json`
 
 export async function handler(event) {
   try {
@@ -43,21 +45,15 @@ export async function handler(event) {
 }
 
 async function verifyToken(authHeader) {
-  const token = getToken(authHeader)
-  const jwt = jsonwebtoken.decode(token, { complete: true })
+  try {
+    const token = getToken(authHeader)
+    const res = await Axios.get(jwksUrl)
 
-  // TODO: Implement token verification
-  return undefined;
-}
+    const pemData = res['data']['keys'][0]['x5c'][0]
+    const cert = `-----BEGIN CERTIFICATE-----\n${pemData}\n-----END CERTIFICATE-----`
 
-function getToken(authHeader) {
-  if (!authHeader) throw new Error('No authentication header')
-
-  if (!authHeader.toLowerCase().startsWith('bearer '))
-    throw new Error('Invalid authentication header')
-
-  const split = authHeader.split(' ')
-  const token = split[1]
-
-  return token
+    return jwt.verify(token, cert, { algorithms: ['RS256'] }) as JwtPayload
+  } catch (err) {
+    logger.error('Fail to authenticate', err)
+  }
 }
