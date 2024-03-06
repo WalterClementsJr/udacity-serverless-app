@@ -1,3 +1,5 @@
+org: junefifth
+app: serverless-todo-app
 service: serverless-todo-app
 
 plugins:
@@ -67,7 +69,7 @@ functions:
           cors: true
           authorizer: Auth
           request:
-            schema:
+            schemas:
               application/json: ${file(schema/todo.json)}
     iamRoleStatements:
       - Effect: Allow
@@ -121,7 +123,7 @@ functions:
 resources:
   Resources:
     RequestBodyValidator:
-      Type: "AWS::ApiGateway::RequestValidator"
+      Type: AWS::ApiGateway::RequestValidator
       Properties:
         Name: 'request-body-validator'
         RestApiId:
@@ -143,7 +145,6 @@ resources:
 
     # DynamoDB
     TodoTable:
-      DeletionPolicy: Retain
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:provider.environment.TODOS_TABLE}
@@ -172,10 +173,12 @@ resources:
 
     # S3 Bucket
     AttachmentsBucket:
-      DeletionPolicy: Retain
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:provider.environment.ATTACHMENT_S3_BUCKET}
+        PublicAccessBlockConfiguration:
+          BlockPublicPolicy: false
+          RestrictPublicBuckets: false
         CorsConfiguration:
           CorsRules:
             - AllowedOrigins:
@@ -191,7 +194,6 @@ resources:
               MaxAge: 3000
 
     BucketPolicy:
-      DeletionPolicy: Retain
       Type: AWS::S3::BucketPolicy
       Properties:
         Bucket: !Ref AttachmentsBucket
@@ -204,7 +206,6 @@ resources:
                 - s3:PutObject
               Resource: !Join
                 - ''
-                - - 'arn:aws:s3:::'
-                  - ${self:provider.environment.ATTACHMENT_S3_BUCKET}
-                  - /*
+                - - !GetAtt AttachmentsBucket.Arn
+                  - '/*'
               Principal: "*"
