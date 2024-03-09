@@ -6,17 +6,15 @@ import App from './App'
 import './index.css'
 import { authConfig } from './config'
 
-const domain = authConfig.domain;
-const clientId = authConfig.clientId;
-
-console.log(domain, clientId);
-
 ReactDOM.render(
   <Auth0Provider
-    domain={domain}
-    clientId={clientId}
-    redirectUri={window.location.origin}
-    audience={`https://${domain}/api/v2/`}
+    domain={authConfig.domain}
+    clientId={authConfig.clientId}
+    redirectUri={authConfig.callbackUrl}
+    // authorizationParams={{
+    //   redirect_uri: window.location.origin
+    // }}
+    audience={`${authConfig.auth0Audience}`}
     scope="read:todo write:todo delete:todo"
   >
     <App />

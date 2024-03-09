@@ -1,20 +1,12 @@
 import update from 'immutability-helper'
 import React, { useEffect, useState } from 'react'
-import {
-  Button,
-  Checkbox,
-  Divider,
-  Grid,
-  Header,
-  Icon,
-  Image,
-  Loader
-} from 'semantic-ui-react'
+import { Button, Checkbox, Divider, Grid, Header, Icon, Image, Loader } from 'semantic-ui-react'
 
 import { useAuth0 } from '@auth0/auth0-react'
 import { useNavigate } from 'react-router-dom'
 import { deleteTodo, getTodos, patchTodo } from '../api/todos-api'
 import { NewTodoInput } from './NewTodoInput'
+import { authConfig } from '../config'
 
 export function Todos() {
   function renderTodos() {
@@ -77,7 +69,7 @@ export function Todos() {
   async function onTodoDelete(todoId) {
     try {
       const accessToken = await getAccessTokenSilently({
-        audience: `https://test-endpoint.auth0.com/api/v2/`,
+        audience: authConfig.auth0Audience,
         scope: 'delete:todo'
       })
       await deleteTodo(accessToken, todoId)
@@ -91,7 +83,7 @@ export function Todos() {
     try {
       const todo = todos[pos]
       const accessToken = await getAccessTokenSilently({
-        audience: `https://test-endpoint.auth0.com/api/v2/`,
+        audience: authConfig.auth0Audience,
         scope: 'write:todo'
       })
       await patchTodo(accessToken, todo.todoId, {
@@ -128,7 +120,7 @@ export function Todos() {
     async function foo() {
       try {
         const accessToken = await getAccessTokenSilently({
-          audience: `https://test-endpoint.auth0.com/api/v2/`,
+          audience: authConfig.auth0Audience,
           scope: 'read:todos'
         })
         console.log('Access token: ' + accessToken)
