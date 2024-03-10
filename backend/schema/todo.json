@@ -12,7 +12,7 @@
       "title": "title of todo",
       "minLength": 1,
       "maxLength": 100,
-      "pattern": "^[a-zA-Z0-9]+$"
+      "pattern": "^[a-zA-Z0-9 ]+$"
     },
     "userId": {
       "type": "string"
@@ -21,12 +21,10 @@
       "type": "string"
     },
     "createdAt": {
-      "type": "string",
-      "format": "date-time"
+      "type": "string"
     },
     "dueDate": {
-      "type": "string",
-      "format": "date-time"
+      "type": "string"
     },
     "done": {
       "type": "boolean"

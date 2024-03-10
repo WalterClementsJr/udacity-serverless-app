@@ -4,13 +4,13 @@ import {CreateTodoDto} from "../models/CreateToDoDto";
 import {UpdateTodoDto} from "../models/UpdateToDoDto";
 import {ToDoRepository} from "../repositories/ToDoRepository";
 import {TodoItemUpdate} from "../models/ToDoItemUpdate";
+import {v4 as uuidv4} from 'uuid';
 
-const uuidv4 = require("uuid/v4");
-const toDoAccess = new ToDoRepository();
+const toDoRepository = new ToDoRepository();
 
 export async function getAllToDo(jwtToken: string): Promise<TodoItem[]> {
   const userId = parseUserId(jwtToken);
-  return toDoAccess.getAllToDo(userId);
+  return toDoRepository.getAllToDo(userId);
 }
 
 export function createToDo(
@@ -20,7 +20,7 @@ export function createToDo(
   const userId = parseUserId(jwtToken);
   const todoId = uuidv4();
 
-  return toDoAccess.createToDo({
+  return toDoRepository.createToDo({
     userId: userId,
     todoId: todoId,
     attachmentUrl: "",
@@ -36,14 +36,14 @@ export function updateToDo(
   jwtToken: string
 ): Promise<TodoItemUpdate> {
   const userId = parseUserId(jwtToken);
-  return toDoAccess.updateToDo(updateTodoRequest, todoId, userId);
+  return toDoRepository.updateToDo(updateTodoRequest, todoId, userId);
 }
 
 export function deleteToDo(todoId: string, jwtToken: string): Promise<string> {
   const userId = parseUserId(jwtToken);
-  return toDoAccess.deleteToDo(todoId, userId);
+  return toDoRepository.deleteToDo(todoId, userId);
 }
 
 export function generateUploadUrl(todoId: string): Promise<string> {
-  return toDoAccess.generateUploadUrl(todoId);
+  return toDoRepository.generateUploadUrl(todoId);
 }

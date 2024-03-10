@@ -14,7 +14,7 @@ export class ToDoRepository {
     private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
     private readonly s3Client: Types = new XAWS.S3({signatureVersion: "v4"}),
     private readonly todoTable = process.env.TODOS_TABLE,
-    private readonly s3BucketName = process.env.S3_BUCKET_NAME
+    private readonly s3BucketName = process.env.ATTACHMENT_S3_BUCKET
   ) {
   }
 
@@ -66,18 +66,45 @@ export class ToDoRepository {
         userId: userId,
         todoId: todoId,
       },
-      UpdateExpression: "set #a = :a, #b = :b, #c = :c, #d = :d",
+      UpdateExpression: "set #a = :a, #b = :b, #c = :c",
       ExpressionAttributeNames: {
         "#a": "name",
         "#b": "dueDate",
         "#c": "done",
-        "#d": "attachmentUrl",
       },
       ExpressionAttributeValues: {
         ":a": todoUpdate["name"],
         ":b": todoUpdate["dueDate"],
         ":c": todoUpdate["done"],
-        ":d": todoUpdate["attachmentUrl"],
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await this.docClient.update(params).promise();
+    logger.info(result);
+    const attributes = result.Attributes;
+
+    return attributes as TodoItemUpdate;
+  }
+  async updateToDoAttachmentUrl(
+    url: string,
+    todoId: string,
+    userId: string
+  ): Promise<TodoItemUpdate> {
+    logger.info("Updating todo");
+
+    const params = {
+      TableName: this.todoTable,
+      Key: {
+        userId: userId,
+        todoId: todoId,
+      },
+      UpdateExpression: "set #a = :a",
+      ExpressionAttributeNames: {
+        "#a": "attachmentUrl",
+      },
+      ExpressionAttributeValues: {
+        ":a": url,
       },
       ReturnValues: "ALL_NEW",
     };

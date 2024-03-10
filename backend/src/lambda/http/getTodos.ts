@@ -12,7 +12,9 @@ export const handler: APIGatewayProxyHandler = async (
 ): Promise<APIGatewayProxyResult> => {
   logger.info("Processing Event ", event);
 
-  const jwtToken = getToken(event.headers.Authorization);
+  const jwtToken = getToken(
+    event.headers.Authorization || event.headers.authorization
+  );
 
   const toDos = await getAllToDo(jwtToken);
   logger.info("Found todos", toDos);

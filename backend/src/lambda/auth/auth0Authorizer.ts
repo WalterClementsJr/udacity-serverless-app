@@ -3,12 +3,18 @@ import jwt from 'jsonwebtoken'
 import { createLogger } from '../../utils/logger'
 import { JwtPayload } from '../../auth/JwtPayload'
 import { getToken } from '../../auth/utils'
+import { CustomAuthorizerResult } from 'aws-lambda'
+import { APIGatewayTokenAuthorizerEvent } from 'aws-lambda/trigger/api-gateway-authorizer'
 
 const logger = createLogger('Auth0Authorizer')
 
-const jwksUrl = `https://${process.env.AUTH0_URL}/.well-known/jwks.json`
+const jwksUrl = `https://${process.env.AUTH0_JWKS_URL}`
 
-export async function handler(event) {
+export const handler = async (
+  event: APIGatewayTokenAuthorizerEvent
+): Promise<CustomAuthorizerResult> => {
+  logger.info("Authorizing a user", event);
+
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
 

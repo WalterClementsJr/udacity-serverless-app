@@ -4,6 +4,8 @@ service: serverless-todo-app
 
 plugins:
   - serverless-iam-roles-per-function
+  - serverless-offline
+  - serverless-esbuild
 
 frameworkVersion: '3'
 
@@ -36,8 +38,12 @@ provider:
       statements:
         - Effect: Allow
           Action:
-            - xray:*
+            - "xray:*"
           Resource: "*"
+
+custom:
+  esbuild:
+    exclude: []
 
 functions:
 

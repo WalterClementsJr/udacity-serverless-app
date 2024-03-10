@@ -1,4 +1,3 @@
-// TODO: Once your application is deployed, copy an API id here so that the frontend could interact with it
 export const apiEndpoint = process.env.REACT_APP_API_ENDPOINT
 
 export const authConfig = {
