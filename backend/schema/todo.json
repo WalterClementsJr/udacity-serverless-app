@@ -9,7 +9,7 @@
   "properties": {
     "name": {
       "type": "string",
-      "title": "title of todo",
+      "title": "todo item",
       "minLength": 1,
       "maxLength": 100,
       "pattern": "^[a-zA-Z0-9 ]+$"

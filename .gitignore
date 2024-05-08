@@ -1,11 +1,9 @@
 .idea
-HELP.md
 # package directories
 node_modules
 jspm_packages
 
 # Serverless directories
 .serverless
-
-*.terraform.*
 .esbuild
+HELP.md

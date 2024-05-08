@@ -1,11 +1,11 @@
 org: junefifth
-app: serverless-todo-app
-service: serverless-todo-app
+app: serverless-todo
+service: serverless-todo
 
 plugins:
-  - serverless-iam-roles-per-function
   - serverless-offline
   - serverless-esbuild
+  - serverless-iam-roles-per-function
 
 frameworkVersion: '3'
 
@@ -27,9 +27,9 @@ provider:
     apiGateway: true
 
   environment:
-    TODOS_TABLE: ${param:environment}-todo-table
-    TODOS_CREATED_AT_INDEX: CreatedAtIndex
-    ATTACHMENT_S3_BUCKET: ${param:environment}-todo-bucket
+    TODO_TABLE: ${param:environment}-todo-table
+    CREATED_AT_INDEX: CreatedAtIndex
+    S3_BUCKET: ${param:environment}-todo-bucket
     SIGNED_URL_EXPIRATION: 300
     AUTH0_JWKS_URL: ${env:AUTH0_URL}/.well-known/jwks.json
 
@@ -38,7 +38,7 @@ provider:
       statements:
         - Effect: Allow
           Action:
-            - "xray:*"
+            - xray:*
           Resource: "*"
 
 custom:
@@ -115,7 +115,7 @@ functions:
         Action:
           - s3:PutObject
           - s3:GetObject
-        Resource: !GetAtt AttachmentsBucket.Arn
+        Resource: !GetAtt AttachmentBucket.Arn
       - Effect: Allow
         Action:
           - dynamodb:UpdateItem
@@ -144,11 +144,12 @@ resources:
         RestApiId:
           Ref: ApiGatewayRestApi
 
-    # DynamoDB
+    # DynamoDB table
     TodoTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.TODOS_TABLE}
+        TableName: ${self:provider.environment.TODO_TABLE}
+
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
@@ -162,7 +163,7 @@ resources:
           - AttributeName: todoId
             KeyType: RANGE
         LocalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
+          - IndexName: ${self:provider.environment.CREATED_AT_INDEX}
             KeySchema:
               - AttributeName: userId
                 KeyType: HASH
@@ -173,10 +174,10 @@ resources:
         BillingMode: PAY_PER_REQUEST
 
     # S3 Bucket
-    AttachmentsBucket:
+    AttachmentBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:provider.environment.ATTACHMENT_S3_BUCKET}
+        BucketName: ${self:provider.environment.S3_BUCKET}
         PublicAccessBlockConfiguration:
           BlockPublicPolicy: false
           RestrictPublicBuckets: false
@@ -186,18 +187,13 @@ resources:
                 - "*"
               AllowedHeaders:
                 - "*"
-              AllowedMethods:
-                - GET
-                - POST
-                - PUT
-                - HEAD
-                - DELETE
+              AllowedMethods: [ "GET", "POST", "PUT", "HEAD", "DELETE" ]
               MaxAge: 3000
 
     BucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
-        Bucket: !Ref AttachmentsBucket
+        Bucket: !Ref AttachmentBucket
         PolicyDocument:
           Id: S3AttachmentBucketPolicy
           Statement:
@@ -207,6 +203,6 @@ resources:
                 - s3:PutObject
               Resource: !Join
                 - ''
-                - - !GetAtt AttachmentsBucket.Arn
+                - - !GetAtt AttachmentBucket.Arn
                   - '/*'
               Principal: "*"
