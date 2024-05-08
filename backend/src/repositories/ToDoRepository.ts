@@ -13,8 +13,8 @@ export class ToDoRepository {
   constructor(
     private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
     private readonly s3Client: Types = new XAWS.S3({signatureVersion: "v4"}),
-    private readonly todoTable = process.env.TODOS_TABLE,
-    private readonly s3BucketName = process.env.ATTACHMENT_S3_BUCKET
+    private readonly todoTable = process.env.TODO_TABLE,
+    private readonly s3BucketName = process.env.S3_BUCKET
   ) {
   }
 
